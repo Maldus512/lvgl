@@ -309,7 +309,11 @@ static void lv_roller_constructor(const lv_obj_class_t * class_p, lv_obj_t * obj
     lv_obj_class_init_obj(label);
     lv_roller_set_options(obj, "Option 1\nOption 2\nOption 3\nOption 4\nOption 5", LV_ROLLER_MODE_NORMAL);
 
-    LV_LOG_TRACE("finshed");
+	lv_obj_set_scrollbar_mode(obj, LV_SCROLLBAR_MODE_OFF);
+	lv_obj_set_scrollbar_mode(label, LV_SCROLLBAR_MODE_OFF);
+
+	LV_LOG_TRACE("finshed");
+
 }
 
 static void lv_roller_event(const lv_obj_class_t * class_p, lv_event_t * e)
@@ -463,6 +467,8 @@ static void draw_main(lv_event_t * e)
     }
     /*Post draw when the children are drawn*/
     else if(code == LV_EVENT_DRAW_POST) {
+    	return;
+
         lv_draw_ctx_t * draw_ctx = lv_event_get_draw_ctx(e);
 
         lv_draw_label_dsc_t label_dsc;
@@ -515,7 +521,7 @@ static void draw_main(lv_event_t * e)
             label_dsc.flag |= LV_TEXT_FLAG_EXPAND;
             const lv_area_t * clip_area_ori = draw_ctx->clip_area;
             draw_ctx->clip_area = &mask_sel;
-            lv_draw_label(draw_ctx, &label_dsc, &label_sel_area, lv_label_get_text(label), NULL);
+            lv_draw_label(draw_ctx, &label_dsc, &label_sel_area, lv_label_get_text(label), &((lv_label_t*)label)->hint);
             draw_ctx->clip_area = clip_area_ori;
         }
     }
@@ -534,6 +540,9 @@ static void draw_label(lv_event_t * e)
 
     lv_draw_ctx_t * draw_ctx = lv_event_get_draw_ctx(e);
 
+    lv_draw_label(draw_ctx, &label_draw_dsc, &label_obj->coords, lv_label_get_text(label_obj), NULL);
+    return;
+
     /*If the roller has shadow or outline it has some ext. draw size
      *therefore the label can overflow the roller's boundaries.
      *To solve this limit the clip area to the "plain" roller.*/
@@ -541,6 +550,7 @@ static void draw_label(lv_event_t * e)
     lv_area_t roller_clip_area;
     if(!_lv_area_intersect(&roller_clip_area, draw_ctx->clip_area, &roller->coords)) return;
     draw_ctx->clip_area = &roller_clip_area;
+
 
     lv_area_t sel_area;
     get_sel_area(roller, &sel_area);
@@ -632,6 +642,21 @@ static void refr_position(lv_obj_t * obj, lv_anim_enable_t anim_en)
     lv_coord_t mid_y1 = h / 2 - font_h / 2;
 
     lv_coord_t new_y = mid_y1 - sel_y1;
+
+    /* Gabor's fix */
+    lv_indev_t * indev = lv_indev_get_act();
+    if(indev) {
+        lv_point_t v;
+        lv_indev_get_vect(indev, &v);
+
+        //Speed in px/sec/
+        int32_t speed = LV_ABS(v.y * 1000 / LV_INDEV_DEF_READ_PERIOD);
+        int32_t diff = LV_ABS(new_y - lv_obj_get_y(label));
+
+        /*Get the animation time in milliseconds. */
+        if(speed < 300) anim_time = 500;    //Could result in very long anim time for a few pixels/
+        else anim_time = diff * 2000 / speed; //Adjust the magic number empirically/
+    }
 
     if(anim_en == LV_ANIM_OFF || anim_time == 0) {
         lv_anim_del(label, set_y_anim);
