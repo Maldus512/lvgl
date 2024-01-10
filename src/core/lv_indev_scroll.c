@@ -13,6 +13,7 @@
  *      DEFINES
  *********************/
 #define ELASTIC_SLOWNESS_FACTOR 4   /*Scrolling on elastic parts are slower by this factor*/
+#define SCROLL_SCALE            500
 
 /**********************
  *      TYPEDEFS
@@ -131,7 +132,7 @@ void _lv_indev_scroll_throw_handler(_lv_indev_proc_t * proc)
         /*If no snapping "throw"*/
         if(align_y == LV_SCROLL_SNAP_NONE) {
             proc->types.pointer.scroll_throw_vect.y =
-                proc->types.pointer.scroll_throw_vect.y * (1000 - scroll_throw) / 1000;
+                proc->types.pointer.scroll_throw_vect.y * (SCROLL_SCALE - scroll_throw) / SCROLL_SCALE;
 
             lv_coord_t sb = lv_obj_get_scroll_bottom(scroll_obj);
             lv_coord_t st = lv_obj_get_scroll_top(scroll_obj);
@@ -155,7 +156,7 @@ void _lv_indev_scroll_throw_handler(_lv_indev_proc_t * proc)
         /*If no snapping "throw"*/
         if(align_x == LV_SCROLL_SNAP_NONE) {
             proc->types.pointer.scroll_throw_vect.x =
-                proc->types.pointer.scroll_throw_vect.x * (1000 - scroll_throw) / 1000;
+                proc->types.pointer.scroll_throw_vect.x * (SCROLL_SCALE - scroll_throw) / SCROLL_SCALE;
 
             lv_coord_t sl = lv_obj_get_scroll_left(scroll_obj);
             lv_coord_t sr = lv_obj_get_scroll_right(scroll_obj);
@@ -239,7 +240,7 @@ lv_coord_t lv_indev_scroll_throw_predict(lv_indev_t * indev, lv_dir_t dir)
     lv_coord_t sum = 0;
     while(v) {
         sum += v;
-        v = v * (1000 - scroll_throw) / 1000;
+        v = v * (SCROLL_SCALE - scroll_throw) / SCROLL_SCALE;
     }
 
     return sum;
@@ -587,7 +588,7 @@ static lv_coord_t scroll_throw_predict_y(_lv_indev_proc_t * proc)
 
     while(y) {
         move += y;
-        y = y * (1000 - scroll_throw) / 1000;
+        y = y * (SCROLL_SCALE - scroll_throw) / SCROLL_SCALE;
     }
     return move;
 }
@@ -603,7 +604,7 @@ static lv_coord_t scroll_throw_predict_x(_lv_indev_proc_t * proc)
 
     while(x) {
         move += x;
-        x = x * (1000 - scroll_throw) / 1000;
+        x = x * (SCROLL_SCALE - scroll_throw) / SCROLL_SCALE;
     }
     return move;
 }
